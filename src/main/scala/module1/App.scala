@@ -1,4 +1,5 @@
 package module1
+import list.{List, incList, shoutString}
 
 object App {
   def main(args: Array[String]): Unit = {
@@ -12,6 +13,14 @@ object App {
 //
 //    println("Hello world")
 
-    list
+    val l = List.::(5, List.Nil).::(4).::(3).::(2).::(1)
+    val l2 = List.apply(5, 4, 3, 2, 1)
+    println(l.mkString())
+    println(l2.mkString("; "))
+    println(l2.reverse().mkString("; "))
+    println(l2.map(i => s"$i bananas!").mkString(" "))
+    println(l2.filter(i => i % 2 == 0).map(s => s"Even $s").mkString())
+    println(shoutString(List("One", "Two", "Three", "Four", "Five")).mkString())
+    println(incList(l2).mkString())
   }
 }
