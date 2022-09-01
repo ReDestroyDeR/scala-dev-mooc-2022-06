@@ -202,7 +202,7 @@ object hof{
  */
 
 
- object opt {
+ object opt extends App {
 
   /**
    *
@@ -237,7 +237,8 @@ object hof{
     }
 
     def printIfAny(): Unit = this match {
-      case Option.Some(v) => println(this.toString)
+      case Option.Some(v) => println(v.toString)
+      case Option.None => println("None")
     }
 
     /**
@@ -248,8 +249,11 @@ object hof{
      * @return [[Option]] с парой значений от <code>this</code> и <code>other</code>
      * @note Выбрасывает исключение, в случае если один из Option - <code>null</code>
      */
-    def zip[B](other: Option[B]): Option[(T, B)] =
-      Option((this get, other get))
+    def zip[B](other: Option[B]): Option[(T, B)] = (this, other) match {
+      case _ if (this.isEmpty || other.isEmpty) => Option.None
+      case _ => Option.Some((this get, other get))
+    }
+
 
     def filter(predicate: T => Boolean): Option[T] = this match {
       case Option.Some(v) => if (predicate(v)) {
@@ -259,22 +263,7 @@ object hof{
       }
     }
 
-    val a: Option[Int] = ???
 
-    val r: Option[Int] = a.map(i => i + 1)
-
-
-    object Option {
-
-      final case class Some[T](v: T) extends Option[T]
-
-      final case object None extends Option[Nothing]
-
-      def apply[T](v: T): Option[T] = Some(v)
-
-      def zip[A, B](first: Option[A], second: Option[B]): Option[(A, B)] =
-        return first.zip(second);
-    }
 
 
     /**
@@ -296,7 +285,29 @@ object hof{
      */
 
   }
+  object Option {
+
+    final case class Some[T](v: T) extends Option[T]
+
+    final case object None extends Option[Nothing]
+
+    def apply[T](v: T): Option[T] = Some(v)
+
+    def zip[A, B](first: Option[A], second: Option[B]): Option[(A, B)] =
+      return first.zip(second);
+  }
+
+  val o1 = Option(5)
+  val o2 = Option(7)
+  println(o1.map(x => Option(x * 2)))
+  println(o1.flatMap(x => Option(x * 2)))
+  println(o1.zip(o2))
+  println(o1.zip(Option.None))
+  println(Option.None.zip(o2))
+  o1.printIfAny()
+  Option.None.printIfAny()
 }
+
 
   object list {
     /**
