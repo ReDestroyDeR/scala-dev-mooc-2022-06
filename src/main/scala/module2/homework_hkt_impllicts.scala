@@ -12,7 +12,9 @@ object homework_hkt_impllicts extends App {
       *   val r2 = println(tupleF(list1, list2))
       * 
       */
-    def tupleF[F[_], A, B](fa: F[A], fb: F[B])(implicit converter: F[_] => Bindable[F, Any]) = {
+    def tupleF[F[_], A, B](fa: F[A], fb: F[B])
+                          (implicit aConverter: F[A] => Bindable[F, A],
+                                    bConverter: F[B] => Bindable[F, B]): F[(A, B)] = {
       fa.flatMap(a => fb.map(b => (a, b)))
     }
 
