@@ -3,6 +3,7 @@ package module1
 import java.util.{NoSuchElementException, UUID}
 import scala.annotation.tailrec
 import java.time.Instant
+import scala.::
 import scala.language.postfixOps
 import scala.runtime.Nothing$
 
@@ -250,17 +251,14 @@ object hof{
      * @note Выбрасывает исключение, в случае если один из Option - <code>null</code>
      */
     def zip[B](other: Option[B]): Option[(T, B)] = (this, other) match {
-      case _ if (this.isEmpty || other.isEmpty) => Option.None
-      case _ => Option.Some((this get, other get))
+      case (opt.Option.Some(a), opt.Option.Some(b)) => Option(a, b)
+      case _ => opt.Option.None
     }
 
 
     def filter(predicate: T => Boolean): Option[T] = this match {
-      case Option.Some(v) => if (predicate(v)) {
-        Option.Some(v)
-      } else {
-        Option.None
-      }
+      case Option.Some(v) if (predicate(v)) => Option(v)
+      case _ => Option.None
     }
 
 
@@ -318,7 +316,7 @@ object hof{
      * Cons - непустой, содердит первый элемент (голову) и хвост (оставшийся список)
      */
 
-    trait List[+T] extends IterableOnce[T] {
+    trait List[+T] {
       val head: T
       val tail: List[T]
       def ::[TT >: T](elem: TT): List[TT]
@@ -330,58 +328,22 @@ object hof{
 
     object List {
       case class ::[A](head: A, tail: List[A]) extends List[A] {
-        override def mkString(separator: String): String = {
-          var res = ""
-          val iter = this.iterator
-          for (element <- iter) {
-            res += s"$element"
-            if (iter.hasNext)
-              res += s"$separator"
-          }
-          res
+        override def mkString(separator: String = ", "): String = tail match {
+          case Nil => head.toString
+          case _ => head.toString + separator + tail.mkString(separator)
         }
 
         override def ::[TT >: A](elem: TT): List[TT] =
           List.::(head, tail.::(elem))
 
-        override def reverse(): List[A] = {
-          val iter = iterator
-          var res: List[A] = List.::(iter.next(), Nil)
-          for (element <- iter) {
-            res = List.::(element, res)
-          }
-          res
-        }
+        override def reverse(): List[A] = tail.reverse().::(head)
 
-        override def map[R](function: A => R): List[R] = {
-          var res: List[R] = List.Nil
-          for (element <- this) {
-            res = res.::(function(element))
-          }
-          res
-        }
+        override def map[R](function: A => R): List[R] =
+          tail.map(function).::(function(head))
 
-        override def iterator: Iterator[A] = new Iterator[A] {
-          var state: List[A] = List.::(head, tail)
-
-          override def hasNext: Boolean = {
-            state != Nil
-          }
-
-          override def next(): A = {
-            val tmp = state.head
-            state = state.tail
-            tmp
-          }
-        }
-
-        override def filter(predicate: A => Boolean): List[A] = {
-          var res: List[A] = List.Nil
-          for (element <- this) {
-            if (predicate(element))
-              res = res.::(element)
-          }
-          res
+        override def filter(predicate: A => Boolean): List[A] = head match {
+          case v if predicate(head) => tail.filter(predicate).::(v)
+          case _ => tail.filter(predicate)
         }
       }
 
@@ -392,10 +354,6 @@ object hof{
         override def ::[TT >: Nothing](elem: TT): List[TT] = List.::(elem, List.Nil)
         override def reverse(): List[Nothing] = this
         override def map[R](function: Nothing => R): List[Nothing] = this
-        override def iterator: Iterator[Nothing] = new Iterator[Nothing] {
-          override def hasNext: Boolean = false
-          override def next(): Nothing = throw new NoSuchElementException()
-        }
         override def filter(predicate: Nothing => Boolean): List[Nothing] = this
       }
 
