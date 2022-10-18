@@ -18,6 +18,10 @@ object ZioHomeWorkApp extends zio.App {
       .flatMap(d => putStrLn(s"Waited 1 seconds! Current time: $d")).exitCode
 
     val configTest: ZManaged[Any, ReadError[String], config.AppConfig] = loadConfigOrDefault
-    configTest.useNow.flatMap(cfg => putStrLn(cfg.toString)).exitCode
+    // configTest.useNow.flatMap(cfg => putStrLn(cfg.toString)).exitCode
+
+    val appTest = app.exitCode
+    val appSpeedUpTest = runApp.exitCode
+    appSpeedUpTest
   }
 }
