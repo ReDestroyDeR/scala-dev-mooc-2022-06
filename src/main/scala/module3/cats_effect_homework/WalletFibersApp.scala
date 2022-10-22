@@ -1,7 +1,10 @@
 package module3.cats_effect_homework
 
-import cats.effect.{IO, IOApp}
+import cats.effect.kernel.Fiber
+import cats.effect.{IO, IOApp, Spawn}
 import cats.implicits._
+
+import scala.concurrent.duration.{Duration, FiniteDuration, MILLISECONDS, SECONDS}
 
 // Поиграемся с кошельками на файлах и файберами.
 
@@ -17,6 +20,12 @@ import cats.implicits._
 // Подсказка: чтобы сделать бесконечный цикл на IO достаточно сделать рекурсивный вызов через flatMap:
 // def loop(): IO[Unit] = IO.println("hello").flatMap(_ => loop())
 object WalletFibersApp extends IOApp.Simple {
+  def spawnAddProcess(wallet: Wallet[IO], delayBy: FiniteDuration): IO[Fiber[IO, Throwable, Unit]] =
+    Spawn[IO].start(
+        wallet.topup(100)
+          .delayBy(delayBy)
+          .iterateWhile(_ => true)
+      )
 
   def run: IO[Unit] =
     for {
@@ -25,6 +34,21 @@ object WalletFibersApp extends IOApp.Simple {
       wallet2 <- Wallet.fileWallet[IO]("2")
       wallet3 <- Wallet.fileWallet[IO]("3")
       // todo: запустить все файберы и ждать ввода от пользователя чтобы завершить работу
+      fibers <- spawnAddProcess(wallet1, Duration(100, MILLISECONDS)) *>
+        spawnAddProcess(wallet2, Duration(200, MILLISECONDS)) *>
+        spawnAddProcess(wallet3, Duration(500, MILLISECONDS)) *>
+        Spawn[IO].start(
+          IO.pure(wallet1 :: wallet2 :: wallet3 :: Nil)
+            .flatMap(
+              _.map(wallet =>
+                wallet.balance
+                  .flatMap(balance => IO.println(s"${wallet.hashCode()}: $balance"))
+              ).reduce((io1, io2) => io1 *> io2)
+            )
+            .delayBy(Duration(1, SECONDS))
+            .iterateWhile(_ => true)
+        )
+      _ <- IO.readLine *> fibers.cancel
     } yield ()
 
 }
