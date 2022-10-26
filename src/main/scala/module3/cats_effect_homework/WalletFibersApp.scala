@@ -1,5 +1,6 @@
 package module3.cats_effect_homework
 
+import cats.effect.implicits._
 import cats.effect.kernel.Fiber
 import cats.effect.{IO, IOApp, Spawn}
 import cats.implicits._
@@ -24,7 +25,7 @@ object WalletFibersApp extends IOApp.Simple {
     Spawn[IO].start(
         wallet.topup(100)
           .delayBy(delayBy)
-          .iterateWhile(_ => true)
+          .foreverM
       )
 
   def run: IO[Unit] =
@@ -38,15 +39,11 @@ object WalletFibersApp extends IOApp.Simple {
         spawnAddProcess(wallet2, Duration(200, MILLISECONDS)) *>
         spawnAddProcess(wallet3, Duration(500, MILLISECONDS)) *>
         Spawn[IO].start(
-          IO.pure(wallet1 :: wallet2 :: wallet3 :: Nil)
-            .flatMap(
-              _.map(wallet =>
-                wallet.balance
+          (wallet1, wallet2, wallet3).traverse[IO, Unit](wallet =>
+            wallet.balance
                   .flatMap(balance => IO.println(s"${wallet.hashCode()}: $balance"))
-              ).reduce((io1, io2) => io1 *> io2)
-            )
-            .delayBy(Duration(1, SECONDS))
-            .iterateWhile(_ => true)
+          ).delayBy(Duration(1, SECONDS))
+           .foreverM
         )
       _ <- IO.readLine *> fibers.cancel
     } yield ()

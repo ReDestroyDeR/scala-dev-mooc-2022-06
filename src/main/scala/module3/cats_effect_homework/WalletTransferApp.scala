@@ -22,7 +22,7 @@ object WalletTransferApp extends IOApp.Simple {
                             b: Wallet[F],
                             amount: BigDecimal): F[Unit] =
     a.withdraw(amount).flatMap {
-      case Left(BalanceTooLow) => a.topup(amount) // Зачем, если операция в целом не производится? См. 37 строку
+      case Left(BalanceTooLow) => Monad[F].unit
       case Right(_)            => b.topup(amount)
     }
 
@@ -30,13 +30,11 @@ object WalletTransferApp extends IOApp.Simple {
   final class InMemWallet[F[_]: Monad : Concurrent](ref: Ref[F, BigDecimal]) extends Wallet[F] {
     def balance: F[BigDecimal] = ref.get
     def topup(amount: BigDecimal): F[Unit] = ref.update(_ + amount)
-    def withdraw(amount: BigDecimal): F[Either[WalletError, Unit]] = for {
-      current <- ref.get
-      result <- current match {
-        case v if v < 0 => Monad[F].pure(Wallet.BalanceTooLow).map(Left(_))
-        case v => ref.updateAndGet(_ - amount).void.map(Right(_))
+    def withdraw(amount: BigDecimal): F[Either[WalletError, Unit]] =
+      ref.modify {
+        case v if v < 0 => (v, Left(BalanceTooLow))
+        case v => (v - amount, Right(()))
       }
-    } yield result
   }
 
   // todo: реализовать конструктор. Снова хитрая сигнатура, потому что создание Ref - это побочный эффект
