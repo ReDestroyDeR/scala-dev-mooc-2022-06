@@ -1,5 +1,6 @@
 package module4.homework.services
 
+import module1.type_system.user
 import zio.Has
 import zio.Task
 import module4.homework.dao.entity.User
@@ -32,7 +33,10 @@ object UserService{
         userRepo.list()
 
 
-        def listUsersDTO(): RIO[db.DataSource,List[UserDTO]] = ???
+        def listUsersDTO(): RIO[db.DataSource,List[UserDTO]] = for {
+            users <- userRepo.list()
+            roles <- users.map(user => userRepo.userRoles(user.typedId))
+        } yield ()
         
         def addUserWithRole(user: User, roleCode: RoleCode): RIO[db.DataSource, UserDTO] = ???
         
