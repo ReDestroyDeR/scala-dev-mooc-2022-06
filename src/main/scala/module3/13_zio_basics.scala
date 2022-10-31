@@ -166,32 +166,38 @@ object zioOperators {
    * 1. Создать ZIO эффект который будет читать строку из консоли
    */
 
-  lazy val readLine = ???
+  lazy val readLine: Task[String] = ZIO.effect(StdIn.readLine())
 
   /** *
    *
    * 2. Создать ZIO эффект который будет писать строку в консоль
    */
 
-  def writeLine(str: String) = ???
+  def writeLine(str: String): Task[Unit] = ZIO.effect(println(str))
 
   /** *
    * 3. Создать ZIO эффект котрый будет трансформировать эффект содержащий строку в эффект содержащий Int
    */
 
-  lazy val lineToInt = ???
+  lazy val lineToInt: Task[String] => Task[Int] = _.map(_.toInt)
   /** *
    * 3.Создать ZIO эффект, который будет работать как echo для консоли
    *
    */
 
-  lazy val echo = ???
+  lazy val echo: Task[Unit] = for {
+    in <- readLine
+    _ <- writeLine(in)
+  } yield ()
 
   /**
    * Создать ZIO эффект, который будет привествовать пользователя и говорить, что он работает как echo
    */
 
-  lazy val greetAndEcho = ???
+  lazy val greetAndEcho: Task[Unit] = for {
+    _ <- writeLine("Hello username! This is an echo app, write something and I'll repeat it!")
+    _ <- echo
+  } yield ()
 
   // Другие варианты композиции
 
@@ -215,19 +221,26 @@ object zioOperators {
    * строки из консоли, преобразовывать их в числа, а затем складывать их
    */
 
-  val r1 = ???
+  val r1: Task[Int] = for {
+    res1 <- lineToInt(readLine)
+    res2 <- lineToInt(readLine)
+  } yield res1 + res2
 
   /**
    * Второй вариант
    */
 
-  val r2: ZIO[Any, Throwable, Int] = ???
+  val r2: ZIO[Any, Throwable, Int] =
+    lineToInt(readLine).zipWith(lineToInt(readLine))(_+_)
 
   /**
    * Доработать написанную программу, чтобы она еще печатала результат вычисления в консоль
    */
 
-  lazy val r3 = ???
+  lazy val r3: ZIO[Any, Throwable, Int] = for {
+    res <- r2
+    _ <- writeLine(s"Result: $res")
+  } yield res
 
 
   lazy val a: Task[Int] = ???
@@ -261,7 +274,7 @@ object zioOperators {
     * Другой эффект в случае ошибки
     */
 
-    val ab5 = ???
+    val ab5 = ZIO.effect(throw new IllegalAccessError()).orElse(ZIO.succeed("Hello, world!"));
 
   /**
     * 

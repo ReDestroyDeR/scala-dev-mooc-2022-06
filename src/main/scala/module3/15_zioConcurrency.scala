@@ -1,5 +1,6 @@
 package module3
 
+import module3.zioConcurrency.getFromService
 import zio.{Ref, UIO, URIO, ZIO, clock}
 import zio.clock.{Clock, sleep}
 import zio.console.{Console, putStrLn}
@@ -143,13 +144,12 @@ object zioConcurrency {
   /**
    * Получние информации от сервиса занимает 1 секунду
    */
-  def getFromService(ref: Ref[Int]) = ???
+  def getFromService(ref: Ref[Int]) = ZIO.sleep(1 seconds)
 
   /**
    * Отправка в БД занимает в общем 5 секунд
    */
-  def sendToDB(ref: Ref[Int]): ZIO[Clock with Console, Exception, Unit] = ???
-
+  def sendToDB(ref: Ref[Int]): ZIO[Clock with Console, Exception, Unit] = ZIO.sleep(5 seconds)
 
   /**
    * Написать программу, которая конкурентно вызывает выше описанные сервисы

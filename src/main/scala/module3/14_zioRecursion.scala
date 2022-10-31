@@ -58,7 +58,10 @@ object zioRecursion {
 
 
 
-  def fibZ(n: Int) = ???
+  def fibZ(n: Int): Task[Int] = {
+    if(n == 0 || n == 1) ZIO.succeed(n)
+    else fibZ(n - 1).zipWith(fibZ(n - 2))(_+_)
+  }
 
 
 }
