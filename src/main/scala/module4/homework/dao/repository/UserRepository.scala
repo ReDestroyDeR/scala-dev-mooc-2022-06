@@ -9,7 +9,7 @@ import zio.{Has, ULayer, ZLayer}
 object UserRepository{
 
 
-    private val dc = db.Ctx
+    val dc: db.Ctx.type = db.Ctx
     import dc._
 
     type UserRepository = Has[Service]
@@ -53,20 +53,22 @@ object UserRepository{
 
         /** <a href="https://getquill.io/#writing-queries-actions-batch-insert">Doc</a> */
         def createUsers(users: List[User]): Result[List[User]] =
-            dc.run(liftQuery(users).foreach(
-                v => userSchema.insert(User(v.id, v.firstName, v.lastName, v.age))
-            ))
+            dc.run(
+                liftQuery(users).foreach(
+                    v => userSchema.insert(User(v.id, v.firstName, v.lastName, v.age))
+                )
+            ).as(users)
         
         def updateUser(user: User): Result[Unit] =
-            dc.run(userSchema.filter(_.id == user.id)
+            dc.run(userSchema.filter(_.id == lift(user.id))
                           .update(lift(user))).unit
         
         def deleteUser(user: User): Result[Unit] =
-            dc.run(userSchema.filter(_.id == user.id)
+            dc.run(userSchema.filter(_.id == lift(user.id))
                           .delete).unit
         
         def findByLastName(lastName: String): Result[List[User]] =
-            dc.run(userSchema.filter(_.lastName contains lastName))
+            dc.run(userSchema.filter(user => user.lastName like lift(lastName)))
         
         def list(): Result[List[User]] =
             dc.run(userSchema)
@@ -75,30 +77,30 @@ object UserRepository{
             dc.run(
                 for {
                     // SELECT * FROM Role AS r LEFT JOIN UserToRole AS utr ON utr.userId = ?0 WHERE utr.roleId = utr.roleId
-                    userToRoles <- userToRoleSchema.filter(_.userId == userId)
-                    role <- roleSchema.filter(_.typedId == userToRoles.roleId)
+                    userToRoles <- userToRoleSchema.filter(user => user.userId == userId)
+                    role <- roleSchema.filter(role => role.code == userToRoles.roleId.code)
                 } yield role
-            )
+        )
         
         def insertRoleToUser(roleCode: RoleCode, userId: UserId): Result[Unit] =
             dc.run(
                 for {
-                  u <- userSchema.filter(_.typedId == userId)
-                  r <- roleSchema.filter(_.typedId == roleCode)
+                  u <- userSchema.filter(e => e.typedId == userId)
+                  r <- roleSchema.filter(e => e.typedId == roleCode)
                 } yield userToRoleSchema.insert(UserToRole(r.typedId, u.typedId))
             ).unit
         
         def listUsersWithRole(roleCode: RoleCode): Result[List[User]] =
             dc.run(
                 for {
-                    userId <- userToRoleSchema.filter(_.roleId == roleCode)
+                    userId <- userToRoleSchema.filter(_.roleId == lift(roleCode))
                                               .map(_.userId)
-                    users <- userSchema.filter(_.typedId == userId)
+                    users <- userSchema.filter(u => u.typedId == userId)
                 } yield users
             )
         
         def findRoleByCode(roleCode: RoleCode): Result[Option[Role]] =
-            dc.run(roleSchema.filter(_.typedId == roleCode).take(1))
+            dc.run(roleSchema.filter(r => r.typedId == roleCode).take(1))
               .map(_.headOption)
                 
     }

@@ -1,6 +1,9 @@
 package module4.homework.dao.entity
 
-case class Role(code: String, name: String){
+case class Role(
+    code: String,
+    name: String
+){
     def typedId: RoleCode = RoleCode(code)
 }
 
