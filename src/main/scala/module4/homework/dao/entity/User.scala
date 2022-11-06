@@ -4,7 +4,7 @@ case class Role(
     code: String,
     name: String
 ){
-    def typedId: RoleCode = RoleCode(code)
+    def typedCode: RoleCode = RoleCode(code)
 }
 
 case class User(

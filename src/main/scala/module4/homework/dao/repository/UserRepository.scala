@@ -76,18 +76,20 @@ object UserRepository{
         def userRoles(userId: UserId): Result[List[Role]] =
             dc.run(
                 for {
-                    // SELECT * FROM Role AS r LEFT JOIN UserToRole AS utr ON utr.userId = ?0 WHERE utr.roleId = utr.roleId
-                    userToRoles <- userToRoleSchema.filter(user => user.userId == userId)
-                    role <- roleSchema.filter(role => role.code == userToRoles.roleId.code)
+                    // SELECT * FROM Role AS r
+                    // LEFT JOIN UserToRole AS utr ON utr.userId = ?0
+                    // WHERE r.roleId = utr.roleId
+                    userToRoles <- userToRoleSchema.filter(user => user.userId == lift(userId))
+                    role <- roleSchema.filter(role => role.typedCode == userToRoles.roleId)
                 } yield role
-        )
-        
+            )
+
         def insertRoleToUser(roleCode: RoleCode, userId: UserId): Result[Unit] =
             dc.run(
                 for {
-                  u <- userSchema.filter(e => e.typedId == userId)
-                  r <- roleSchema.filter(e => e.typedId == roleCode)
-                } yield userToRoleSchema.insert(UserToRole(r.typedId, u.typedId))
+                  u <- userSchema.filter(e => e.typedId == lift(userId))
+                  r <- roleSchema.filter(e => e.typedCode == lift(roleCode))
+                } yield userToRoleSchema.insert(UserToRole(r.typedCode, u.typedId))
             ).unit
         
         def listUsersWithRole(roleCode: RoleCode): Result[List[User]] =
@@ -100,7 +102,7 @@ object UserRepository{
             )
         
         def findRoleByCode(roleCode: RoleCode): Result[Option[Role]] =
-            dc.run(roleSchema.filter(r => r.typedId == roleCode).take(1))
+            dc.run(roleSchema.filter(r => r.typedCode == roleCode).take(1))
               .map(_.headOption)
                 
     }
