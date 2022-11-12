@@ -6,7 +6,7 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
 
         <changeSet id="create User table" author="avoronets">
-          <createTable tableName="User">
+          <createTable tableName="users">
               <column name="id" type="text">
                 <constraints primaryKey="true" nullable="false"/>
               </column>
@@ -25,7 +25,7 @@
         
         
         <changeSet id="create Role table" author="avoronets">
-          <createTable tableName="Role">
+          <createTable tableName="roles">
               <column name="code" type="text">
                 <constraints primaryKey="true" nullable="false"/> 
               </column>
@@ -36,27 +36,27 @@
         </changeSet>
 
         <changeSet id="create UserToRole table" author="avoronets">
-          <createTable  tableName="UserToRole">
+          <createTable  tableName="user_to_roles">
               <column name="roleId" type="text"/>
               <column name="userId" type="text"/>
           </createTable>
 
           <addForeignKeyConstraint baseColumnNames="roleId"
-              baseTableName="UserToRole"
-              constraintName="fk_UserToRole_roleCode_Role_id"
+              baseTableName="user_to_roles"
+              constraintName="fk_user_to_roles_roleCode_roles_id"
               referencedColumnNames="code"
-              referencedTableName="Role"/>
+              referencedTableName="roles"/>
 
           <addForeignKeyConstraint baseColumnNames="userId"
-              baseTableName="UserToRole"
-              constraintName="fk_UserToRole_userId_User_id"
+              baseTableName="user_to_roles"
+              constraintName="fk_user_to_roles_userId_users_id"
               referencedColumnNames="id"
-              referencedTableName="User"/>
+              referencedTableName="users"/>
         </changeSet>
 
         <changeSet id="fill Roles" author="avoronets">
           <sql>
-              insert into "Role" (code, name)
+              insert into "roles" (code, name)
                 values ('reader', 'Reader'), ('manager', 'Manager'), ('admin', 'Admin')
           </sql>
         </changeSet>

@@ -1,13 +1,10 @@
 package module3
 
-import zio.{Has, RIO}
-import zio.macros.accessible
-import emailService.{Email, EmailAddress, EmailService, Html}
+import module3.emailService.{Email, EmailService, Html}
 import module3.userDAO.UserDAO
-import zio.console
-import zio.ZLayer
-import zio.ZIO
 import zio.console.Console
+import zio.macros.accessible
+import zio.{Has, RIO, ZLayer}
 
 package object userService {
 

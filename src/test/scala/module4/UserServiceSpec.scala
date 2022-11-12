@@ -1,30 +1,21 @@
 package module4
 
-import zio.test.DefaultRunnableSpec
-import zio.test.ZSpec
-import zio.test._
+import module4.homework.dao.entity.{Role, RoleCode, User, UserId}
 import module4.homework.dao.repository.UserRepository
-import zio.ZIO
-import homework.dao.entity.User
-import io.getquill.CompositeNamingStrategy2
-import io.getquill.Escape
-import io.getquill.Literal
-import zio.test.Assertion._
-import module4.homework.dao.entity.Role
+import module4.homework.services.UserService
 import zio.blocking.Blocking
-import zio.Layer
-import zio.test.environment.TestEnvironment
-import zio.random.Random
-import zio.{Has, ZLayer}
-import zio.Task
 import zio.random.Random._
+import zio.test.Assertion._
+import zio.test.TestAspect._
+import zio.test._
+import zio.{ZIO, ZLayer}
+
 import java.util.UUID
-import TestAspect._
-import homework.services.UserService
-import module4.homework.dao.entity.RoleCode
 
 
 object UserServiceSpec extends DefaultRunnableSpec{
+    implicit val stringToUserId: String => UserId = UserId
+    implicit val stringToRoleCode: String => RoleCode = RoleCode
 
     import MigrationAspects._
     val dc = DBTransactor.Ctx
