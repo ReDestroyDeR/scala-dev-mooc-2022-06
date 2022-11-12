@@ -35,7 +35,7 @@ object UserService{
               .mapError(new Throwable(_))
               .someOrFailException
             user <- userRepo.createUser(user)
-            _ <- userRepo.insertRoleToUser(roleCode, user.typedId)
+            _ <- userRepo.insertRoleToUser(roleCode, user.id)
         } yield UserDTO(user, Set(role))
         
         def listUsersWithRole(roleCode: RoleCode): RIO[db.DataSource,List[UserDTO]] = for {
@@ -44,7 +44,7 @@ object UserService{
         } yield userDtoList
 
         private def enhanceUserWithRoles(users: List[User]): RIO[db.DataSource, List[UserDTO]] =
-            ZIO.foreach(users)(user => userRepo.userRoles(user.typedId)
+            ZIO.foreach(users)(user => userRepo.userRoles(user.id)
               .map(roles => UserDTO(user, roles.toSet)))
         
         

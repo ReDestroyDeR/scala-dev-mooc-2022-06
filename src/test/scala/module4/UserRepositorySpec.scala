@@ -1,29 +1,21 @@
 package module4
 
-import zio.test.DefaultRunnableSpec
-import zio.test.ZSpec
-import zio.test._
+import module4.homework.dao.entity.{RoleCode, User, UserId}
 import module4.homework.dao.repository.UserRepository
-import zio.ZIO
-import homework.dao.entity.User
-import io.getquill.CompositeNamingStrategy2
-import io.getquill.Escape
-import io.getquill.Literal
-import zio.test.Assertion._
-import module4.homework.dao.entity.Role
 import zio.blocking.Blocking
-import zio.Layer
-import zio.test.environment.TestEnvironment
 import zio.random.Random
-import zio.{Has, ZLayer}
-import zio.Task
 import zio.random.Random._
+import zio.test.Assertion._
+import zio.test.TestAspect._
+import zio.test._
+import zio.{ZIO, ZLayer}
+
 import java.util.UUID
-import TestAspect._
-import module4.homework.dao.entity.UserId
 
 
 object UserRepositorySpec extends DefaultRunnableSpec{
+    implicit val stringToUserId: String => UserId = UserId
+    implicit val stringToRoleCode: String => RoleCode = RoleCode
 
     import MigrationAspects._
     val dc  = DBTransactor.Ctx
@@ -79,7 +71,7 @@ object UserRepositorySpec extends DefaultRunnableSpec{
                     for{
                         userRepo <- ZIO.environment[UserRepository.UserRepository].map(_.get)
                         user <- userRepo.createUser(user)
-                        result <- userRepo.findUser(user.typedId).some.mapError(_ => new Exception("fetch failed"))
+                        result <- userRepo.findUser(user.id).some.mapError(_ => new Exception("fetch failed"))
                     } yield assert(user.id)(equalTo(result.id)) &&
                         assert(result.firstName)(equalTo(user.firstName))
                 }
@@ -102,7 +94,7 @@ object UserRepositorySpec extends DefaultRunnableSpec{
                     user = users.head
                     newFirstName = "Petr"
                     _ <- userRepo.updateUser(user.copy(firstName = newFirstName))
-                    updated <- userRepo.findUser(user.typedId).some.mapError(_ => new Exception("fetch failed"))
+                    updated <- userRepo.findUser(user.id).some.mapError(_ => new Exception("fetch failed"))
                     all <- userRepo.list()
 
                 } yield assert(updated.firstName)(equalTo(newFirstName)) && 
