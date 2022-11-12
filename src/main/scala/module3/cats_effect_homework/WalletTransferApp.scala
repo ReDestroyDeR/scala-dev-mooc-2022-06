@@ -1,7 +1,7 @@
 package module3.cats_effect_homework
 
 import cats.Monad
-import cats.effect.kernel.Ref
+import cats.effect.kernel.{Concurrent, Ref}
 import cats.effect.{IO, IOApp}
 import cats.implicits._
 import module3.cats_effect_homework.Wallet._
@@ -22,25 +22,33 @@ object WalletTransferApp extends IOApp.Simple {
                             b: Wallet[F],
                             amount: BigDecimal): F[Unit] =
     a.withdraw(amount).flatMap {
-      case Left(BalanceTooLow) => a.topup(amount)
+      case Left(BalanceTooLow) => Monad[F].unit
       case Right(_)            => b.topup(amount)
     }
 
   // todo: реализовать интерпретатор (не забывая про ошибку списания при недостаточных средствах)
-  final class InMemWallet[F[_]](ref: Ref[F, BigDecimal]) extends Wallet[F] {
-    def balance: F[BigDecimal] = ???
-    def topup(amount: BigDecimal): F[Unit] = ???
-    def withdraw(amount: BigDecimal): F[Either[WalletError, Unit]] = ???
+  final class InMemWallet[F[_]: Monad : Concurrent](ref: Ref[F, BigDecimal]) extends Wallet[F] {
+    def balance: F[BigDecimal] = ref.get
+    def topup(amount: BigDecimal): F[Unit] = ref.update(_ + amount)
+    def withdraw(amount: BigDecimal): F[Either[WalletError, Unit]] =
+      ref.modify {
+        case v if v < 0 => (v, Left(BalanceTooLow))
+        case v => (v - amount, Right(()))
+      }
   }
 
   // todo: реализовать конструктор. Снова хитрая сигнатура, потому что создание Ref - это побочный эффект
-  def wallet(balance: BigDecimal): IO[Wallet[IO]] = ???
+  def wallet[F[_]: Monad : Concurrent](balance: BigDecimal): F[Wallet[F]] =
+    for {
+      ref <- Ref.of(balance)
+      wallet <- Monad[F].pure(new InMemWallet[F](ref))
+    } yield wallet
 
   // а это тест, который выполняет перевод с одного кошелька на другой и выводит балансы после операции. Тоже менять не нужно
   def testTransfer: IO[(BigDecimal, BigDecimal)] =
     for {
-      w1 <- wallet(100)
-      w2 <- wallet(200)
+      w1 <- wallet[IO](100)
+      w2 <- wallet[IO](200)
       _ <- transfer(w1, w2, 50)
       b1 <- w1.balance
       b2 <- w2.balance
